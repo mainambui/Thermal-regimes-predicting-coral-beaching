@@ -25,13 +25,8 @@ CoralBleach_pa  <-  CoralBleach_pa[complete.cases(CoralBleach_pa), ] ##all datas
 levels(CoralBleach_pa$Ocean)<-as.factor(c("2", "1"))
 
 # prepare predictor dataframe
-predictorsVif        <-  data.frame(CoralBleach_pa[,c(13:24,29:42,47:50)])##run this if using layers
-#predictorsVif<-predictorsVif[c(5,6,1,3,2,22,27,28,29,9,11,12,14,13,15,16,7,8,19)]##postHoc working with correlates of top variables
-predictorsVifCalc    <-  predictorsVif ##run this if using dataframe instead of layers
-# prepare predictor spatial data to match the dataframe columns. 
-# Skip this if using dataframe instead of layers
-# allVarReefVif    <-  dropLayer(all.var.reef, setdiff(names(all.var.reef), names(predictorsVifCalc)))
-# check if it works by typing all(sort(names(allVarReefVif)) == sort(names(predictorsVifCalc)))
+predictorsVif        <-  data.frame(CoralBleach_pa[,c(13:24,29:42,47:50)])
+predictorsVifCalc    <-  predictorsVif
 
 #  check that the response variable is contained within the response data.frame
 varsToAdd  <-  c('Severity_lev', 'Year', 'Ecoreg_sal', 'Ocean')
@@ -42,7 +37,6 @@ rm(j, varsToAdd)
 # write to output folder, but ensure it exists first
 output  <-  file.path('output', 'data')
 dir.create(output, recursive=TRUE, showWarnings = FALSE)
-
 
 ## 2. create output table for model predictors
 predictorsUsed  <-  data.frame()
@@ -77,23 +71,21 @@ for(con in vifPredCombinations){
   }
 }
 ## 3. Run all models following this combination (random is set to TRUE by default)
-##to run OCean as Random, run: lapply(vifPredCombinations, runModelText)
-modelList  <-  lapply(vifPredCombinations_new, runModelText) # for fixed-effect models without ocean run lapply(vifPredCombinations, runModelText, random=FALSE)
+# for fixed-effect models without ocean run lapply(vifPredCombinations, runModelText, random=FALSE)
 
-
-##################
-#FridayAugust for the modelList in the workspace see 4vars.R
+modelList  <-  lapply(vifPredCombinations_new, runModelText) 
 
 ## 4. Model selection step
-##Model selection including over dispersion, AUC, and QAIC
+##Model selection including over dispersion, AUC
 #modelListAllVarComb is from 4vars.R and consists of 1,2,3,4 combination variables
 #modelListSelection  <-  model.sel(modelListAllVarComb, extra= c(OvDispPval = function(x) overdisp_fun(x)[[4]]))
+
 modelListSelection<-model.sel(modelListAllVarComb, beta="partial.sd", extra= c(OvDispPval = function(x) overdisp_fun(x)[[4]], auc = function(x) roc(predictorsVifCalc$Severity_lev, predict(x))[[9]][1:1]))
 write.csv(data.frame(modelListSelection), "AllTopModels_vifPrior.csv", row.names=TRUE)##coefficients are standardized
 nonDispersedModels<- get.models(modelListSelection, c(OvDispPval<=0.1)  
 AucSelectModels<- get.models(modelListSelection, auc>=0.85)  
 predMapVif=predict(object=all.var.reef, model=models_ave, re.form=~(1|Ocean), type='response', progress="text", format="GTiff")                                
-                                
+
 nonDispersedModels  <-  model.sel(nonDispersedModels, extra= c(OvDispPval = function(x) overdisp_fun(x)[[4]], auc = function(x) roc(predictorsVifCalc$Severity_lev, predict(x))[[9]][1:1]))
 write.csv(nonDispersedModels, "AllTopModelsVifPriorNonDisp.csv", row.names=TRUE)
   
