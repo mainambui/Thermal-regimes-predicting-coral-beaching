@@ -9,10 +9,7 @@ library(rgeos)
 library(ttutils)
 library(parallel)
 
-
 source('RScripts/paperZeroModelSelectionFunctions.R')
-
-
 
 # load preprocessed data
 load('~/WaveletBleachingDataPrep_July.RData')
