@@ -1,6 +1,5 @@
-
-
-library(usdm)
+##Workspace associated with this code is on the cloudbuster - university of Queensland R Studio Server
+library(sdm)
 library(lme4)
 library(MuMIn)
 library(corrplot)
@@ -10,23 +9,23 @@ library(rgeos)
 library(ttutils)
 library(parallel)
 
-rm(list=ls())
 
-##prepare relevant dataframes
-# load workspace and source functions first
+source('RScripts/paperZeroModelSelectionFunctions.R')
+
+
+
+# load preprocessed data
 load('~/WaveletBleachingDataPrep_July.RData')
 
+#read in and prepapre ReefBase bleaching records
+#observationpointshape.csv=file with unduplicted coordinates
 bl<-read.csv('observationpointshape.csv')
-#bl<-read.csv('allpointsExtract.csv')#already extracted data
 CoralBleach_Extr<-extract(all.var, bl[,c(6,5)])
 CoralBleach_Extr<-data.frame(cbind(bl,CoralBleach_Extr))
 CoralBleach_pa<-subset(CoralBleach_Extr, Severity_lev %in% c(0,3))
 CoralBleach_pa$Severity_lev[CoralBleach_pa$Severity_lev == 3] <- 1
-#CoralBleach_pa<-data.frame(na.exclude(CoralBleach_pa)) ##all datas
 CoralBleach_pa  <-  CoralBleach_pa[complete.cases(CoralBleach_pa), ] ##all datas
 levels(CoralBleach_pa$Ocean)<-as.factor(c("2", "1"))
-
-source('RScripts/paperZeroModelSelectionFunctions.R')
 
 # prepare predictor dataframe
 predictorsVif        <-  data.frame(CoralBleach_pa[,c(13:24,29:42,47:50)])##run this if using layers
